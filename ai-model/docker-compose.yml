@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Tier 1: Machine Learning Model Inference Microservice (Protected by API Key)
+  ml-service:
+    build:
+      context: .
+      dockerfile: ml-service/Dockerfile
+    container_name: ml_inference_service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_PATH=/app/models/house_price_model.pkl
+      - ML_SERVICE_API_KEY=ml_live_key_9f82d1c87e4a3b10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - enterprise_ai_net
+
+  # Tier 2: Core Business Backend (Orchestration, Mortgage & Tax Analytics)
+  core-backend:
+    build:
+      context: .
+      dockerfile: core-backend/Dockerfile
+    container_name: core_business_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ML_SERVICE_URL=http://ml-service:8001
+      - ML_SERVICE_API_KEY=ml_live_key_9f82d1c87e4a3b10
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - enterprise_ai_net
+
+  # Tier 3: Production React UI served via Nginx
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: house_price_ui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      core-backend:
+        condition: service_healthy
+    networks:
+      - enterprise_ai_net
+
+networks:
+  enterprise_ai_net:
+    driver: bridge
