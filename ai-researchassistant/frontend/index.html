@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Intelligence System | Cognitive Memory & Career Strategist</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            },
+            dark: {
+              900: '#0b0f17',
+              800: '#111827',
+              750: '#161f33',
+              700: '#1f2937',
+              600: '#374151',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-dark-900 text-slate-100 min-h-screen flex antialiased font-sans">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-dark-800 border-r border-dark-700 flex flex-col justify-between shrink-0 select-none">
+    <div>
+      <!-- App Header -->
+      <div class="p-5 border-b border-dark-700 flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-500">
+          <i data-lucide="brain" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base tracking-tight text-white">Personal AI</h1>
+          <p class="text-xs text-slate-400">Cognitive Memory & RAG</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1.5 text-sm font-medium">
+        <button onclick="switchTab('chat')" id="nav-chat" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-dark-700 transition active-tab">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span>Grounded Chat</span>
+        </button>
+        <button onclick="switchTab('ingest')" id="nav-ingest" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-dark-700 transition">
+          <i data-lucide="file-plus" class="w-4 h-4"></i>
+          <span>Ingest Knowledge</span>
+        </button>
+        <button onclick="switchTab('memories')" id="nav-memories" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-dark-700 transition">
+          <i data-lucide="database" class="w-4 h-4"></i>
+          <span>Memory Explorer</span>
+        </button>
+        <button onclick="switchTab('profile')" id="nav-profile" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-dark-700 transition">
+          <i data-lucide="user-check" class="w-4 h-4"></i>
+          <span>Profile & Goals</span>
+        </button>
+        <button onclick="switchTab('audit')" id="nav-audit" class="nav-item w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-dark-700 transition">
+          <i data-lucide="history" class="w-4 h-4"></i>
+          <span>Audit Log</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- System Status Footer -->
+    <div class="p-4 border-t border-dark-700 bg-dark-800/50 space-y-2 text-xs">
+      <div class="flex items-center justify-between text-slate-400">
+        <span class="flex items-center space-x-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Core Engine</span>
+        </span>
+        <span id="status-api" class="text-emerald-400 font-mono">Ready</span>
+      </div>
+      <div class="flex items-center justify-between text-slate-400">
+        <span>Model</span>
+        <span id="status-model" class="text-slate-300 font-mono text-[11px] truncate max-w-[110px]">llama3.2:3b</span>
+      </div>
+      <div class="flex items-center justify-between text-slate-400">
+        <span>Vector Store</span>
+        <span class="text-slate-300 font-mono text-[11px]">Qdrant 768d</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-dark-900">
+
+    <!-- Topbar -->
+    <header class="h-14 border-b border-dark-700 px-6 flex items-center justify-between bg-dark-850 shrink-0">
+      <div class="flex items-center space-x-3">
+        <span id="section-title" class="font-semibold text-slate-200">Grounded Intelligence Chat</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-500 border border-brand-500/20">Anti-Hallucination Guard Active</span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button onclick="loadInitialData()" class="p-2 rounded-lg bg-dark-750 hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition" title="Refresh">
+          <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- TAB 1: Grounded Chat -->
+    <section id="tab-chat" class="tab-content flex-1 flex flex-col overflow-hidden">
+      <!-- Message Stream -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Welcome banner -->
+        <div class="p-5 rounded-2xl bg-dark-800 border border-dark-700 max-w-2xl mx-auto space-y-3">
+          <div class="flex items-center space-x-3 text-brand-500">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+            <h3 class="font-semibold text-white">Grounded Personal Intelligence</h3>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            I am your personal AI assistant. I answer questions about your background, career objectives, current learning, and projects using strictly retrieved, verified memories.
+          </p>
+          <div class="pt-2 flex flex-wrap gap-2 text-xs">
+            <span class="text-slate-400">Try asking:</span>
+            <button onclick="sendQuickPrompt('What are my primary career goals?')" class="px-2.5 py-1 rounded-md bg-dark-750 hover:bg-dark-700 text-slate-300 border border-dark-600 transition">"What are my primary career goals?"</button>
+            <button onclick="sendQuickPrompt('What projects am I currently building?')" class="px-2.5 py-1 rounded-md bg-dark-750 hover:bg-dark-700 text-slate-300 border border-dark-600 transition">"What projects am I building?"</button>
+            <button onclick="sendQuickPrompt('What is my professional focus and identity?')" class="px-2.5 py-1 rounded-md bg-dark-750 hover:bg-dark-700 text-slate-300 border border-dark-600 transition">"Who am I?"</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="p-4 border-t border-dark-700 bg-dark-850 shrink-0">
+        <form id="chat-form" onsubmit="handleChatSubmit(event)" class="max-w-4xl mx-auto flex items-center space-x-3">
+          <input 
+            type="text" 
+            id="chat-input" 
+            placeholder="Ask anything about your goals, knowledge, preferences, or decisions..." 
+            class="flex-1 bg-dark-800 border border-dark-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition"
+            autocomplete="off"
+          />
+          <button type="submit" id="chat-send-btn" class="px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm flex items-center space-x-2 transition disabled:opacity-50">
+            <span>Ask</span>
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 2: Ingest Knowledge -->
+    <section id="tab-ingest" class="tab-content flex-1 overflow-y-auto p-8 hidden">
+      <div class="max-w-3xl mx-auto space-y-8">
+        <div>
+          <h2 class="text-xl font-bold text-white">Ingest Personal Knowledge</h2>
+          <p class="text-sm text-slate-400 mt-1">Provide background information, goals, learning reflections, or project details. The system decomposes them into atomic, categorized memories.</p>
+        </div>
+
+        <!-- Ingest Form -->
+        <div class="p-6 rounded-2xl bg-dark-800 border border-dark-700 space-y-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Note / Document Title</label>
+            <input type="text" id="ingest-title" placeholder="e.g. 2026 Career Roadmap & Personal Profile" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Verification Status</label>
+            <select id="ingest-status" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+              <option value="VERIFIED_FACT">VERIFIED_FACT (Direct factual truth from you)</option>
+              <option value="USER_STATED">USER_STATED (Casual notes or evolving ideas)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Content to Ingest</label>
+            <textarea id="ingest-content" rows="6" placeholder="Paste your bio, career targets, project architecture details, learning notes, or preferred methods..." class="w-full bg-dark-900 border border-dark-700 rounded-lg p-3.5 text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+          </div>
+
+          <button onclick="handleIngestSubmit()" id="ingest-btn" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm flex items-center justify-center space-x-2 transition">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Extract & Ingest Memories</span>
+          </button>
+        </div>
+
+        <!-- Ingestion Results Panel -->
+        <div id="ingest-results" class="hidden space-y-4">
+          <h3 class="font-semibold text-white flex items-center space-x-2">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+            <span>Ingestion Summary</span>
+          </h3>
+          <div id="ingest-cards" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Memory Explorer -->
+    <section id="tab-memories" class="tab-content flex-1 flex flex-col overflow-hidden hidden">
+      <!-- Filter Bar -->
+      <div class="p-4 border-b border-dark-700 bg-dark-850 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center space-x-2">
+          <select id="memory-category-filter" onchange="loadMemories()" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+            <option value="">All Categories</option>
+            <option value="IDENTITY">IDENTITY</option>
+            <option value="GOAL_CAREER">GOAL_CAREER</option>
+            <option value="PROJECT">PROJECT</option>
+            <option value="SEMANTIC_KNOWLEDGE">SEMANTIC_KNOWLEDGE</option>
+            <option value="EPISODIC">EPISODIC</option>
+            <option value="PROCEDURAL">PROCEDURAL</option>
+            <option value="PREFERENCE">PREFERENCE</option>
+          </select>
+
+          <select id="memory-status-filter" onchange="loadMemories()" class="bg-dark-800 border border-dark-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+            <option value="">All Verification Statuses</option>
+            <option value="VERIFIED_FACT">VERIFIED_FACT</option>
+            <option value="USER_STATED">USER_STATED</option>
+            <option value="AI_INFERRED">AI_INFERRED</option>
+            <option value="HISTORICAL">HISTORICAL</option>
+          </select>
+        </div>
+
+        <div class="text-xs text-slate-400">
+          Showing <span id="memory-count" class="font-semibold text-white">0</span> memories
+        </div>
+      </div>
+
+      <!-- Memories Grid -->
+      <div id="memories-container" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+        <!-- Memory cards will render here -->
+      </div>
+    </section>
+
+    <!-- TAB 4: Profile & Goals -->
+    <section id="tab-profile" class="tab-content flex-1 overflow-y-auto p-8 hidden">
+      <div class="max-w-5xl mx-auto space-y-8">
+        <div>
+          <h2 class="text-xl font-bold text-white">Personal Knowledge Profile</h2>
+          <p class="text-sm text-slate-400 mt-1">Structured snapshot of verified identity, career trajectories, and active projects.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Identity Summary -->
+          <div class="p-5 rounded-2xl bg-dark-800 border border-dark-700 space-y-4">
+            <div class="flex items-center space-x-2 text-brand-500">
+              <i data-lucide="user" class="w-5 h-5"></i>
+              <h3 class="font-semibold text-white">Identity</h3>
+            </div>
+            <div id="profile-identity-list" class="space-y-2 text-sm text-slate-300">
+              <p class="text-xs text-slate-500 italic">No identity memories stored yet.</p>
+            </div>
+          </div>
+
+          <!-- Career Goals -->
+          <div class="p-5 rounded-2xl bg-dark-800 border border-dark-700 space-y-4">
+            <div class="flex items-center space-x-2 text-amber-400">
+              <i data-lucide="target" class="w-5 h-5"></i>
+              <h3 class="font-semibold text-white">Career Goals</h3>
+            </div>
+            <div id="profile-goals-list" class="space-y-2 text-sm text-slate-300">
+              <p class="text-xs text-slate-500 italic">No career goals stored yet.</p>
+            </div>
+          </div>
+
+          <!-- Active Projects -->
+          <div class="p-5 rounded-2xl bg-dark-800 border border-dark-700 space-y-4">
+            <div class="flex items-center space-x-2 text-blue-400">
+              <i data-lucide="folder-git-2" class="w-5 h-5"></i>
+              <h3 class="font-semibold text-white">Projects</h3>
+            </div>
+            <div id="profile-projects-list" class="space-y-2 text-sm text-slate-300">
+              <p class="text-xs text-slate-500 italic">No projects recorded yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: Audit Log -->
+    <section id="tab-audit" class="tab-content flex-1 overflow-y-auto p-8 hidden">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white">Memory Audit Trail</h2>
+          <p class="text-sm text-slate-400 mt-1">Immutable ledger tracking every memory insertion, edit, superseding update, and deletion.</p>
+        </div>
+
+        <div id="audit-logs-container" class="space-y-3">
+          <!-- Audit records render here -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit Memory Modal -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-dark-800 border border-dark-700 rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <h3 class="font-bold text-white text-base">Edit Memory</h3>
+      <input type="hidden" id="edit-memory-id" />
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Content</label>
+        <textarea id="edit-memory-content" rows="4" class="w-full bg-dark-900 border border-dark-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Verification Status</label>
+        <select id="edit-memory-status" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm text-white">
+          <option value="VERIFIED_FACT">VERIFIED_FACT (Approved)</option>
+          <option value="USER_STATED">USER_STATED</option>
+          <option value="HISTORICAL">HISTORICAL (Superseded)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Update Reason</label>
+        <input type="text" id="edit-memory-reason" placeholder="e.g. Corrected graduation year" class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm text-white" />
+      </div>
+      <div class="flex justify-end space-x-3 pt-2">
+        <button onclick="closeEditModal()" class="px-4 py-2 rounded-lg bg-dark-700 text-slate-300 hover:text-white text-sm">Cancel</button>
+        <button onclick="saveMemoryEdit()" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
